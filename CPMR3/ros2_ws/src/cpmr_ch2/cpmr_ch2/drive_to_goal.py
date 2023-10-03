@@ -40,19 +40,29 @@ class MoveToGoal(Node):
         self._goal_x = 0.0
         self._goal_y = 0.0
         self._goal_t = 0.0
+        self.max_vel = 0.2 
+        self.max_gain = 5.0
+        self.newGoal= 0.0
 
         self.add_on_set_parameters_callback(self.parameter_callback)
         self.declare_parameter('goal_x', value=self._goal_x)
         self.declare_parameter('goal_y', value=self._goal_y)
         self.declare_parameter('goal_t', value=self._goal_t)
+        self.declare_parameter('max_vel', value=self.max_vel)
+        self.declare_parameter('max_gain', value=self.max_gain)
+        self.declare_parameter('newGoal', value=self.newGoal)
+        self.max_vel = 0.2 
+        self.max_gain = 5.0
 
         self._subscriber = self.create_subscription(Odometry, "/odom", self._listener_callback, 1)
         self._publisher = self.create_publisher(Twist, "/cmd_vel", 1)
 
 
-    def _listener_callback(self, msg, vel_gain=5.0, max_vel=0.2, max_pos_err=0.05):
+    def _listener_callback(self, msg, vel_gain=5.0, max_vel=5.2, max_pos_err=0.05):
+        
+        vel_gain = self.max_gain
+        max_vel = self.max_vel
         pose = msg.pose.pose
-
         cur_x = pose.position.x
         cur_y = pose.position.y
         o = pose.orientation
@@ -69,22 +79,38 @@ class MoveToGoal(Node):
             y = max(min(y_diff * vel_gain, max_vel), -max_vel)
             twist.linear.x = x * math.cos(cur_t) + y * math.sin(cur_t)
             twist.linear.y = -x * math.sin(cur_t) + y * math.cos(cur_t)
-            self.get_logger().info(f"at ({cur_x},{cur_y},{cur_t}) goal ({self._goal_x},{self._goal_y},{self._goal_t})")
+            # self.get_logger().info(f"at ({cur_x},{cur_y},{cur_t}) goal ({self._goal_x},{self._goal_y},{self._goal_t})")
+            self.get_logger().info(f"at ({max_vel},{vel_gain},{cur_t})")
         self._publisher.publish(twist)
 
     def parameter_callback(self, params):
         self.get_logger().info(f'move_robot_to_goal parameter callback')
+        changedGoal = False
         for param in params:
             if param.name == 'goal_x' and param.type_ == Parameter.Type.DOUBLE:
                 self._goal_x = param.value
+                changedGoal = True
             elif param.name == 'goal_y' and param.type_ == Parameter.Type.DOUBLE:
                 self._goal_y = param.value
+                changedGoal = True
             elif param.name == 'goal_t' and param.type_ == Parameter.Type.DOUBLE:
                 self._goal_t = param.value
+                changedGoal = True
+            elif param.name == 'max_vel' and param.type_ == Parameter.Type.DOUBLE:
+                self.max_vel = param.value
+            elif param.name == 'max_gain' and param.type_ == Parameter.Type.DOUBLE:
+                self.max_gain = param.value
+            elif param.name == 'newGoal' and param.type_ == Parameter.Type.STRING:
+                self.goal_x = float(param.value.split("")[0])
+                self.goal_y = float(param.value.split("")[1])
+                changedGoal = True
             else:
                 self.get_logger().warn(f'Invalid parameter {param.name}')
                 return SetParametersResult(successful=False)
-            self.get_logger().warn(f"Changing goal {self._goal_x} {self._goal_y} {self._goal_t}")
+            if changedGoal:
+                self.get_logger().warn(f"Changing goal {self._goal_x} {self._goal_y} {self._goal_t}")
+            else:
+                self.get_logger().warn(f"Max Velocity Change: {self.max_vel} Max gain changed: {self.max_gain}")
         return SetParametersResult(successful=True)
 
 
