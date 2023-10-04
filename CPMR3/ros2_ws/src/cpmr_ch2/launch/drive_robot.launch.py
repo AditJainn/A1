@@ -13,7 +13,7 @@ def generate_launch_description():
         DeclareLaunchArgument('goal_t', default_value = '0.0', description = 'goal (t)'),
         DeclareLaunchArgument('max_vel', default_value = '0.0', description = 'maxium Velocity '),
         DeclareLaunchArgument('max_gain', default_value = '0.0', description = 'max Gain'),
-        DeclareLaunchArgument('newGoal', default_value = '0.0', description = 'newGoal'),
+        DeclareLaunchArgument('newGoal', default_value = "0.0&0.0", description = 'newGoal'),
         
         Node(
             package = 'cpmr_ch2',

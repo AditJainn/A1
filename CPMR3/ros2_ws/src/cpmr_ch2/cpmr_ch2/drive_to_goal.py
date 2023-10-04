@@ -42,7 +42,7 @@ class MoveToGoal(Node):
         self._goal_t = 0.0
         self.max_vel = 0.2 
         self.max_gain = 5.0
-        self.newGoal= 0.0
+        self.newGoal= "0.0&0.0"
 
         self.add_on_set_parameters_callback(self.parameter_callback)
         self.declare_parameter('goal_x', value=self._goal_x)
@@ -57,7 +57,7 @@ class MoveToGoal(Node):
         self._subscriber = self.create_subscription(Odometry, "/odom", self._listener_callback, 1)
         self._publisher = self.create_publisher(Twist, "/cmd_vel", 1)
 
-
+    # Parameters are basically useless now for vel_Gain and max_vel
     def _listener_callback(self, msg, vel_gain=5.0, max_vel=5.2, max_pos_err=0.05):
         
         vel_gain = self.max_gain
@@ -75,12 +75,14 @@ class MoveToGoal(Node):
 
         twist = Twist()
         if dist > max_pos_err:
+            # The X speed should be the distance 
+
             x = max(min(x_diff * vel_gain, max_vel), -max_vel)
             y = max(min(y_diff * vel_gain, max_vel), -max_vel)
             twist.linear.x = x * math.cos(cur_t) + y * math.sin(cur_t)
             twist.linear.y = -x * math.sin(cur_t) + y * math.cos(cur_t)
             # self.get_logger().info(f"at ({cur_x},{cur_y},{cur_t}) goal ({self._goal_x},{self._goal_y},{self._goal_t})")
-            self.get_logger().info(f"at ({max_vel},{vel_gain},{cur_t})")
+            self.get_logger().info(f"at ({x_diff},{y_diff})")
         self._publisher.publish(twist)
 
     def parameter_callback(self, params):
@@ -101,8 +103,8 @@ class MoveToGoal(Node):
             elif param.name == 'max_gain' and param.type_ == Parameter.Type.DOUBLE:
                 self.max_gain = param.value
             elif param.name == 'newGoal' and param.type_ == Parameter.Type.STRING:
-                self.goal_x = float(param.value.split("")[0])
-                self.goal_y = float(param.value.split("")[1])
+                self._goal_x = float(param.value.split("&")[0])
+                self._goal_y = float(param.value.split("&")[1])
                 changedGoal = True
             else:
                 self.get_logger().warn(f'Invalid parameter {param.name}')
