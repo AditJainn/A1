@@ -37,6 +37,8 @@ class MoveToGoal(Node):
         super().__init__('move_robot_to_goal')
         self.get_logger().info(f'{self.get_name()} created')
 
+        self.cylinderList = []
+
         self._goal_x = 0.0
         self._goal_y = 0.0
         self._goal_t = 0.0
@@ -51,12 +53,17 @@ class MoveToGoal(Node):
         self.declare_parameter('max_vel', value=self.max_vel)
         self.declare_parameter('max_gain', value=self.max_gain)
         self.declare_parameter('newGoal', value=self.newGoal)
-        self.max_vel = 0.2 
+        self.max_vel = 3.0 
         self.max_gain = 5.0
 
         self._subscriber = self.create_subscription(Odometry, "/odom", self._listener_callback, 1)
         self._publisher = self.create_publisher(Twist, "/cmd_vel", 1)
 
+    class roundObject:
+        def __init__(self, x, y, r): 
+            self.x = x 
+            self.y = y
+            self.r = r 
     # Parameters are basically useless now for vel_Gain and max_vel
     def _listener_callback(self, msg, vel_gain=5.0, max_vel=5.2, max_pos_err=0.05):
         
@@ -76,13 +83,12 @@ class MoveToGoal(Node):
         twist = Twist()
         if dist > max_pos_err:
             # The X speed should be the distance 
-
-            x = max(min(x_diff * vel_gain, max_vel), -max_vel)
-            y = max(min(y_diff * vel_gain, max_vel), -max_vel)
+            x = max(min(x_diff * vel_gain, max_vel), -max_vel) # basically the speed 
+            y = max(min(y_diff * vel_gain, max_vel), -max_vel) # bascially the speed
             twist.linear.x = x * math.cos(cur_t) + y * math.sin(cur_t)
             twist.linear.y = -x * math.sin(cur_t) + y * math.cos(cur_t)
             # self.get_logger().info(f"at ({cur_x},{cur_y},{cur_t}) goal ({self._goal_x},{self._goal_y},{self._goal_t})")
-            self.get_logger().info(f"at ({x_diff},{y_diff})")
+            self.get_logger().info(f"at ({x},{y})")
         self._publisher.publish(twist)
 
     def parameter_callback(self, params):
@@ -109,6 +115,7 @@ class MoveToGoal(Node):
             else:
                 self.get_logger().warn(f'Invalid parameter {param.name}')
                 return SetParametersResult(successful=False)
+            
             if changedGoal:
                 self.get_logger().warn(f"Changing goal {self._goal_x} {self._goal_y} {self._goal_t}")
             else:
