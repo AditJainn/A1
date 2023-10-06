@@ -298,7 +298,7 @@
 
   <gazebo>
     <plugin name="differential_drive_controller" filename="libgazebo_ros_diff_drive.so">
-      <update_rate>0.5</update_rate>
+      <update_rate>0.1</update_rate>
       <left_joint>left_wheel_joint</left_joint>
       <right_joint>right_wheel_joint</right_joint>
       <robotBaseFrame>base_footprint</robotBaseFrame>
