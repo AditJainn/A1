@@ -2,6 +2,7 @@ import math
 from math import atan2
 import numpy as np
 import rclpy
+import json
 from rclpy.node import Node
 from rclpy.parameter import Parameter
 from rcl_interfaces.msg import SetParametersResult
@@ -66,6 +67,21 @@ class MoveToGoal(Node):
             self.y = y
             self.r = r 
     # Parameters are basically useless now for vel_Gain and max_vel
+    
+    def doesIntersect (r,h,k, m,c):
+
+        
+        j = -r**2 + h**2  + c**2 - 2*c*k + k**2
+        a = m**2  
+        b = -2*h + 2*c*m - 2*k*m 
+
+        disc = b**2 - 4*a*j > 0
+        if disc > 0 :
+            return int(2)
+        elif disc == 0:
+            return int(1) 
+        else:
+            return int(0) 
     def _listener_callback(self, msg, vel_gain=5.0, max_vel=5.2, max_pos_err=0.05):
         
         vel_gain = self.max_gain
@@ -76,39 +92,46 @@ class MoveToGoal(Node):
         o = pose.orientation
         roll, pitchc, yaw = euler_from_quaternion(o)
         cur_t = yaw 
-    
-
         x_diff = self._goal_x - cur_x
         y_diff = self._goal_y - cur_y
         dist = math.sqrt(x_diff * x_diff + y_diff * y_diff)
-
         angleToGoal = atan2(y_diff,x_diff)
         # Q4/5
-        # newDict = {
-        # "o1" : {"x" : 3, "y" : 4, "r" : 0.2},
-        # "o2" : {"x" : 4, "y" : 1, "r" : 0.3}
-        # }
-        # slope = (self._goal_y - cur_y) / (self._goal_x - cur_x)        
-        # y_intercept = cur_y - slope * cur_x
+        # with('default.json') as f:
+        #     newDict = json.load(f)
 
+        # def doesIntersect (r,h,k, m,c):
         
+        # EQ 1 
+        slope = (self._goal_y - cur_y) / (self._goal_x - cur_x)        
+        y_intercept = cur_y - slope * cur_x
+        buffer = 0.5
+        stop = False
+        # for circle in newDict:
+            # With buffer will not colide with cirlce
+            # self.get_logger().info(f'{circle["r"]}')
+
+            # intNum = self.doesIntersect(int(circle['r']+buffer)+int(circle['x']),int(circle['y']),int(slope),int(y_intercept))
+            # if intNum<= 1:
+            #     stop = False
+            # else:
+            #     stop = True
+            # elif self.doesIntersect(circle['r']+buffer,circle['x'],circle['y'],slope,y_intercept) ==1:
         
+
+        # EQ 2 
+        # r^2 = x - h^2  + (y-k^2) 
+        # circle = newDict['o1']['r']^2
         twist = Twist()
-
-
-        if dist > max_pos_err: # is the distance far enough to travel to ? 
+        if (dist > max_pos_err):# and (not stop): # is the distance far enough to travel to ? 
             # The X speed should be the distance
 
             vector = [x_diff * vel_gain, y_diff * vel_gain]
+            magnitude = math.sqrt(vector[0]**2 + vector[1]**2 )
 
-            mag = math.sqrt(vector[0]**2 + vector[1]**2 )
-            if mag > max_vel:
-                vector[0] /= mag
-                vector[1] /= mag
-
-                vector[0] *= max_vel
-                vector[1] *= max_vel
-
+            if magnitude > max_vel:
+                vector[0] = vector[0]/magnitude * max_vel 
+                vector[1] /= vector[0]/magnitude * max_vel
             x = vector[0]
             y = vector[1]
 
