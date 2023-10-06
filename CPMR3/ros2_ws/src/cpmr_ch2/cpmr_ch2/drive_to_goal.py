@@ -84,32 +84,49 @@ class MoveToGoal(Node):
 
         angleToGoal = atan2(y_diff,x_diff)
         # Q4/5
-        # newDict = {
-        # "o1" : {"x" : 3, "y" : 4, "r" : 0.2},
-        # "o2" : {"x" : 4, "y" : 1, "r" : 0.3}
-        # }
-        # slope = (self._goal_y - cur_y) / (self._goal_x - cur_x)        
-        # y_intercept = cur_y - slope * cur_x
+        newDict = {
+        "o1" : {"x" : 3, "y" : 4, "r" : 0.2},
+        "o2" : {"x" : 4, "y" : 1, "r" : 0.3}
+        }
+        slope = (self._goal_y - cur_y) / (self._goal_x - cur_x)        
+        y_intercept = cur_y - slope * cur_x
 
         
         
         twist = Twist()
-        if abs(angleToGoal - yaw) > 0.1 and dist > max_pos_err:
-            twist.angular.z = 3.0
-            twist.linear.x = 0.0
-            twist.linear.y=0.0
+        # the math for it to go in the right direction 
+        # if abs(angleToGoal - yaw) > 0.1 and dist > max_pos_err:
+        #     self.get_logger().info(f"at {dist} and ({angleToGoal} and {yaw} )")
+        #     twist.angular.z = 3.0
+        #     twist.linear.x = 0.0
+        #     twist.linear.y=0.0
             
-        elif dist > max_pos_err: # is the distance far enough to travel to ? 
-            # The X speed should be the distance 
-            twist.angular.z = 0.0
-            x = max(min(x_diff * vel_gain, max_vel), -max_vel) # basically the speed 
-            y = max(min(y_diff * vel_gain, max_vel), -max_vel) # bascially the speed
+        if dist > max_pos_err: # is the distance far enough to travel to ? 
+            # The X speed should be the distance
+            self.get_logger().info(f"at ({yaw})")
+            direction = 1 
+            if yaw < 0 :
+                direction = -1
+            twist.linear.x = 1.0 * math.cos(yaw) * direction
+            twist.linear.y = 1.0 * math.sin (yaw) * direction
+            
+            
+            # self.get_logger().info(f"at ({yaw})")
+            # twist.angular.z = 0.0
+            # # twist.linear.x = 2.0
+            # # twist.linear.y = 2.0
+            # x = max(min(x_diff * vel_gain, max_vel), -max_vel) # basically the speed 
+            # y = max(min(y_diff * vel_gain, max_vel), -max_vel) # bascially the speed
 
-            
-            twist.linear.x = x * math.cos(cur_t) + y * math.sin(cur_t)
-            twist.linear.y = -x * math.sin(cur_t) + y * math.cos(cur_t)
-            # self.get_logger().info(f"at ({cur_x},{cur_y},{cur_t}) goal ({self._goal_x},{self._goal_y},{self._goal_t})")
-            self.get_logger().info(f"at ({cur_t})")
+            # # twist.linear.x = x
+            # # twist.linear.y = x
+            # twist.linear.x = math.sin(yaw)* 
+            # twist.linear.x = x * math.cos(cur_t) + y * math.sin(cur_t)
+            # twist.linear.y = -x * math.sin(cur_t) + y * math.cos(cur_t)
+            # # twist.linear.x = x * math.cos(cur_t) + y * math.sin(cur_t)
+            # # twist.linear.y = -x * math.sin(cur_t) + y * math.cos(cur_t)
+            # # self.get_logger().info(f"at ({cur_x},{cur_y},{cur_t}) goal ({self._goal_x},{self._goal_y},{self._goal_t})")
+            # self.get_logger().info(f"at ({cur_t})")
         self._publisher.publish(twist)
 
     def parameter_callback(self, params):
